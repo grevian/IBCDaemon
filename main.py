@@ -18,10 +18,12 @@ parser.add_argument('--secret', type=str, help='The secret to include in status 
 args = parser.parse_args()
 
 STANDBY_DELAY = datetime.timedelta(minutes=5)
+POST_BURN_READING = datetime.timedelta(minutes=2)
 SENSOR_URL = args.monitor_address
 
 # Ensure an update is done at least on the first loop iteration, no matter the boiler status
 last_update = datetime.datetime.now() - STANDBY_DELAY
+last_burn = datetime.datetime.now() - POST_BURN_READING
 
 # TODO Read from a configuration file/the command line
 i = IBCBoiler(args.boiler_ip)
@@ -74,12 +76,20 @@ while True:
                     IBCBoiler.Status.Initializing):
         # Update immediately, values change very quickly while heating
         last_update = datetime.datetime.now()
+        last_burn = last_update
         send_boiler_update(i)
+        logging.info("Sending Update: Boiler in active status")
     elif i.status == IBCBoiler.Status.Standby:
         # Only update if a lot of time has passed, updates during standby are much less significant
         if last_update + STANDBY_DELAY <= datetime.datetime.now():
             last_update = datetime.datetime.now()
             send_boiler_update(i)
+            logging.info("Sending Update: Boiler in standby")
+        # Continue sending updates for a few minutes after the last time the burner was active
+        elif last_burn + POST_BURN_READING >= datetime.datetime.now():
+            last_update = datetime.datetime.now()
+            send_boiler_update(i)
+            logging.info("Sending Update: Boiler was recently active")
     else:
         # Log a warning here, maybe an error/off state?
         logging.warning("Boiler is in an unexpected state: %r", i.status)
