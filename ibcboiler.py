@@ -16,6 +16,7 @@ class IBCBoiler(object):
 
     class Status(object):
         Heating = "Heating"
+        Circulating = "Circulating"
         Standby = "Standby"
         Purging = "Purging"
         Igniting = "Igniting"

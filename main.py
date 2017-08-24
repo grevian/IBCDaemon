@@ -90,6 +90,10 @@ while True:
             last_update = datetime.datetime.now()
             send_boiler_update(i)
             logging.info("Sending Update: Boiler was recently active")
+    elif i.status == IBCBoiler.Status.Circulating:
+        last_update = datetime.datetime.now()
+        send_boiler_update(i)
+        logging.info("Sending Update: Boiler is circulating")
     else:
         # Log a warning here, maybe an error/off state?
         logging.warning("Boiler is in an unexpected state: %r", i.status)
